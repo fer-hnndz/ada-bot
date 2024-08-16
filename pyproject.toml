@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ada-bot"
+version = "0.1.0"
+description = "Bot para server de Discord Sistemas UNITEC"
+authors = ["fer-hnndz <65425622+fer-hnndz@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+disnake = "^2.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
