@@ -1,11 +1,29 @@
 import disnake
 from disnake.ext import commands
-from typing import Literal
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 flags = commands.CommandSyncFlags.default()
+intents = disnake.Intents.all()
 client = commands.Bot(
-    command_prefix="$", test_guilds=[1274077543833665610], command_sync_flags=flags
+    command_prefix="$",
+    test_guilds=[1274077543833665610],
+    command_sync_flags=flags,
+    intents=intents,
 )
+
+
+@client.event
+async def on_ready():
+    print("Bot is running!")
+    await client.change_presence(
+        status=disnake.Status.online,
+        activity=disnake.Activity(
+            type=disnake.ActivityType.playing, name="Vigilando Sistemáticos"
+        ),
+    )
 
 
 @client.slash_command(name="embed", description="Send an embed from the list")
@@ -68,5 +86,4 @@ async def verificar(inter: disnake.ApplicationCommandInteraction, user: disnake.
     )
 
 
-print("Bot is running!")
-client.run("MTI3NDA3NDgyMTI2MDYwNzUyOA.GlJkeh.rTEoGuBcAGg9jw7IHx5rmKhge5qtZ-fP2iI8B8")
+client.run(os.environ.get("TOKEN", ""))
