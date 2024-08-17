@@ -2,6 +2,7 @@ import disnake
 from disnake.ext import commands
 import os
 from dotenv import load_dotenv
+from cogs.verification import Verification
 
 load_dotenv()
 
@@ -9,7 +10,7 @@ flags = commands.CommandSyncFlags.default()
 intents = disnake.Intents.all()
 client = commands.Bot(
     command_prefix="$",
-    test_guilds=[1274077543833665610],
+    test_guilds=[1274077543833665610, 1243747892477431880],
     command_sync_flags=flags,
     intents=intents,
 )
@@ -26,64 +27,55 @@ async def on_ready():
     )
 
 
-@client.slash_command(name="embed", description="Send an embed from the list")
-async def embeds(
-    inter: disnake.ApplicationCommandInteraction,
-    embed: str = commands.Param(choices=["verify", "test"]),
-):
-    if inter.author.id != client.owner.id:
-        return await inter.response.send_message(
-            "You are not allowed to use this command!", ephemeral=True
-        )
-
+@client.command()
+@commands.is_owner()
+async def verify_embed(ctx: commands.Context):
     verify_embed = disnake.Embed(
         title="Verificación",
-        description=f"Para poder verificarse como sistemático, envía una foto de tu carnet a {client.owner.mention}",
+        description=f"Para poder verificarse como sistemático, envía una foto de tu carnet o un video donde se muestre tu info en registo a {client.owner.mention}",
         color=disnake.Color.red(),
     )
 
+    if not ctx.guild:
+        return
+
     verify_embed.set_thumbnail(
-        url=(
-            inter.guild.icon.url
-            if inter.guild.icon
-            else inter.author.display_avatar.url
-        )
+        url=(ctx.guild.icon.url if ctx.guild.icon else ctx.author.display_avatar.url)
     )
 
-    await inter.send(embed=verify_embed)
+    await ctx.send(embed=verify_embed)
 
 
-@client.slash_command(
-    name="verificar", description="Le agrega el rol de verificado a un usuario"
-)
-async def verificar(inter: disnake.ApplicationCommandInteraction, user: disnake.Member):
-    await inter.response.defer(ephemeral=True)
+# ================ Cog Management ================
 
-    if not "admin" in [role.name.lower() for role in inter.author.roles]:
-        await inter.send("No tienes permisos para usar este comando", ephemeral=True)
-        return
 
-    if "verificado" in [role.name.lower() for role in user.roles]:
-        await inter.send("Este usuario ya está verificado", ephemeral=True)
-        return
+@client.command()
+@commands.is_owner()
+async def load(ctx, extension: str):
+    client.load_extension(f"cogs.{extension}")
+    await ctx.send(f"Loaded {extension} cog")
 
-    role: disnake.Role = disnake.utils.get(inter.guild.roles, name="Verificado")  # type: ignore
-    unverified_role: disnake.Role = disnake.utils.get(inter.guild.roles, name="No Verificado")  # type: ignore
 
-    await user.remove_roles(unverified_role)
-    await user.add_roles(role)
+@client.command()
+@commands.is_owner()
+async def unload(ctx, extension: str):
+    client.unload_extension(f"cogs.{extension}")
+    await ctx.send(f"Unloaded {extension} cog")
 
-    try:
-        await user.send(f"Has sido verificado en **{inter.guild.name}**!")
 
-    except Exception:
-        print(
-            f"No se pudo enviar el mensaje al usuario {user.mention} tratandolo de verificar."
-        )
+@client.command()
+@commands.is_owner()
+async def reload(ctx, extension: str):
+    client.reload_extension(f"cogs.{extension}")
+    await ctx.send(f"Reloaded {extension} cog")
 
-    await inter.edit_original_response(
-        content=f"El usuario {user.mention} ha sido verificado."
-    )
 
+cogs = [
+    f"cogs.{extension[:-3]}"
+    for extension in os.listdir("cogs")
+    if extension.endswith(".py")
+]
+for cog in cogs:
+    client.load_extension(cog)
 
 client.run(os.environ.get("TOKEN", ""))
